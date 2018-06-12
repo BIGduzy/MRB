@@ -1,8 +1,10 @@
+const int fan = 7;
 bool firstByte = true;
 uint8_t incomingByte = 0;
 
 void setup() {
   Serial.begin(9600);
+  pinMode(fan, OUTPUT);
 }
 
 
@@ -18,9 +20,10 @@ void loop() {
 
     if (incomingByte == 'M') {
         while(Serial.available() == 0) {}; // Wait for data
-        uint8_t data = Serial.read();
-        Serial.print("Value: ");
-        Serial.println(data);
+        uint8_t data = Serial.read(); 
+        //Serial.print("Value: ");
+        //Serial.println(data);
+        analogWrite(fan, data);
     }
   }
   delay(1);
