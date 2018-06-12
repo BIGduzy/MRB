@@ -38,7 +38,7 @@ void loop() {
         //Serial.print("Value: ");
         //Serial.println(data);
         analogWrite(fan, data);
-    } else if (incomingByte == "S") {
+    } else if (incomingByte == 'S') {
         while(Serial.available() == 0) {};
         uint8_t data = Serial.read();
         tone(speaker, convertByteToSpeaker(data), 200);
