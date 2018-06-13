@@ -43,7 +43,7 @@ Project is gonna fail.
 NOTE: We need to contact Marius for new fans.
 
 ## 10-06-2018
-Colored ball can not be found.
+We found a new ping pong ball, this one is larger and orange. Because of this we have better lift and colored paper behind tube is no longer needed.
 
 ## 12-06-2018
 We have finally managed to have the vision part locate the ball.
