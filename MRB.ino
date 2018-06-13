@@ -3,6 +3,17 @@ const int speaker = 8;
 bool firstByte = true;
 uint8_t incomingByte = 0;
 
+void play(const uint8_t speaker, const uint8_t tone) {
+    auto end = millis();
+    auto half_period = 1000000 / ( 2 * tone );    
+    while(end > millis()) {
+        digitalWrite(speaker, HIGH);
+        delayMicroseconds(half_period);
+        digitalWrite(speaker, LOW);
+        delayMicroseconds(half_period);
+    }
+}
+
 int convertByteToSpeaker(uint8_t dat) {
     int ret = (dat * 12) + 2000; // Need to get a value between 2k and 5k
 
@@ -41,7 +52,7 @@ void loop() {
     } else if (incomingByte == 'S') {
         while(Serial.available() == 0) {};
         uint8_t data = Serial.read();
-        tone(speaker, convertByteToSpeaker(data), 200);
+        play(speaker, data);
     }
   }
   delay(1);
