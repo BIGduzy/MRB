@@ -2,6 +2,7 @@ const int fan = 7;
 const int speaker = 8;
 bool firstByte = true;
 uint8_t incomingByte = 0;
+uint8_t speakerTone = 0;
 
 void play(const uint8_t speaker, const uint8_t tone) {
     auto end = millis() + 10;
@@ -51,9 +52,9 @@ void loop() {
         analogWrite(fan, data);
     } else if (incomingByte == 'S') {
         while(Serial.available() == 0) {};
-        uint8_t data = Serial.read();
-        play(speaker, data);
+        speakerTone = Serial.read();
     }
   }
+  play(speaker, speakerTone);
   delay(1);
 }

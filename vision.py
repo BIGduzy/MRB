@@ -32,6 +32,21 @@ webcam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH,width)
 webcam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT,height)
 
 
+#=================================== PID parameters ============================================#
+
+#Create trackbars
+def nothing(x): # DUMMY FUNCTION
+    pass
+
+def clearSetpoint(x):
+    g_iterm = 0
+    
+cv2.createTrackbar('P','hsv',15,255,nothing) # KP
+cv2.createTrackbar('I','hsv',100,255,nothing) # KI
+cv2.createTrackbar('D','hsv',0,255,nothing) # KD
+cv2.createTrackbar('S','hsv',160,255,clearSetpoint) # SETPOINT
+
+g_iterm = 0
 
 
 
@@ -65,6 +80,9 @@ WF_y2 = 0.95
 #Variable to keep track of the actual time of last cyclus; Used for calculating FPS
 previoustime = 0
 
+#The ball distance
+g_ball_distance = 0
+g_running = True
 
 #==============================================================================================================#
 #========================================== Start Functions ===================================================#
@@ -105,6 +123,7 @@ def getvalues(img, height, width):
     
     line_x1 = int(width * WF_x1)
     line_x2 = int(width * WF_x2)
+    
     x_step = (line_x2-line_x1)/WF_measurements_x
     
     line_y1 = int(height * WF_y1)
@@ -196,8 +215,6 @@ def visualisation(img, img_can, pos_list, sat_list, height, width):
         mm_bot = 0
         mm_top = 285
         mm_washfront = int(position * scalefactor)
-
-        print mm_washfront
     
         cv2.line(img_can,(line_x-60,int(height*0.95)),(line_x-60, int(pos_list[list_dif.index(max(list_dif))-factor])),(0,255,0),1)
         cv2.putText( img_can, str(mm_washfront), (line_x-100, int(pos_list[list_dif.index(max(list_dif))-factor])), 5, 1, (255,255,255) )
@@ -226,6 +243,91 @@ def visualisation(img, img_can, pos_list, sat_list, height, width):
 
 
 
+#======================================== SERIAL THINGS ======================================================#
+import serial
+import threading
+import time
+ser_com = serial.Serial('COM3')  # open serial port
+print(ser_com.name)         # check which port was really used
+
+
+def int_to_byte(var):
+    return bytes(bytearray([var]))
+
+
+def write_to_port(ser):
+    global g_iterm
+    old_time = time.time()
+    delay = 0.1
+    while g_running:
+        if time.time() - old_time > delay:  # Every 10 sec
+            old_time = time.time()
+            ser.write(b'M')     # Set edit mode to Motor on arduino
+            setpoint = cv2.getTrackbarPos('S','hsv');
+            kp = float(cv2.getTrackbarPos('P', 'hsv')) / 100;
+            ki = float(cv2.getTrackbarPos('I', 'hsv')) / 100
+            error = (g_ball_distance - setpoint)
+
+            print "Error: " + str(error)
+
+            STABLE_AT = 168
+            # DEfault value - p + i + d
+            value = STABLE_AT - int(kp * error) + int(ki * g_iterm )
+
+            if (value > 255):
+                value = 255
+            elif  (value < STABLE_AT - 30):
+                value = STABLE_AT - 30
+
+            
+            '''
+            if (g_ball_distance > setpoint):
+                value = 160
+            elif (g_ball_distance < setpoint):
+                value = 200
+            else:
+                value = 255 - g_ball_distance
+            '''
+
+            # Out of screen
+            '''
+            if (g_ball_distance > 255):
+                value = 150
+            '''
+
+            # Minimal fan speed
+            '''
+            if (value < 140):
+                value = 140
+            '''
+
+            if (g_ball_distance == 999):
+                print "DOEI BALL"
+                value = STABLE_AT - 5
+            else:
+                g_iterm *= delay
+            
+            print "Ball hight: " + str(g_ball_distance)
+            print "Fan speed: " + str(value)
+            ser.write(int_to_byte(value))     # Set motor speed
+
+            ser.write(b'S')
+            print "Set point: " + str(setpoint) + "/n"
+            ser.write(int_to_byte(g_ball_distance if g_ball_distance < 256 else 255))
+
+
+def read_from_port(ser):
+    while g_running:
+        print "Result: " + ser.readline()
+
+
+read_thread = threading.Thread(target = read_from_port, args = (ser_com,))
+write_thread = threading.Thread(target = write_to_port, args = (ser_com,))
+
+read_thread.start()
+write_thread.start()
+
+
 #======================================== Main loop ======================================================#
 retval = False
 
@@ -234,7 +336,7 @@ while(retval == False):
     retval,input_image = webcam.read()
     time.sleep(1)
 
-while(1):   #Main program
+while(True):   #Main program
     retval,input_image = webcam.read()                                      #function to read camera input, "retval" = True/False, "input_image" = recorded image
 
     img_canvas = scaleimages(scale, input_image)
@@ -245,7 +347,7 @@ while(1):   #Main program
     height, width = getresolution(img_canvas)                               #Function to get the resolution of the image
 
     img_vis, pos_list, sat_list = getvalues(img_hsv, height, width)         #Function to detect and calculate values
-    img_vis, img_canvas, mm_washfront = visualisation(img_hsv, img_canvas, pos_list, sat_list, height, width)     #Function to print visualisize values on image
+    img_vis, img_canvas, g_ball_distance = visualisation(img_hsv, img_canvas, pos_list, sat_list, height, width)     #Function to print visualisize values on image
 
     fps, currenttime = getfps(previoustime)
     previoustime = currenttime
@@ -253,11 +355,15 @@ while(1):   #Main program
             
     cv2.imshow("input", scaled_image)   #Display scaled input image
     cv2.imshow("hsv", img_vis)          #Display HSV image with visualizations
-    cv2.imshow("output", img_canvas)    #Diplay canvas
-
+    cv2.imshow("output", img_canvas)    #Diplay 
+    
     if(cv2.waitKey(20) == 27):          #Escape button pressed
         break                           #Quit program
 
     
 cv2.destroyAllWindows()
 
+g_running = False
+
+# Closing serial breaks code d;(
+# ser_com.close()
