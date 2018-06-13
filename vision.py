@@ -39,6 +39,7 @@ def nothing(x): # DUMMY FUNCTION
     pass
 
 def clearSetpoint(x):
+    global g_iterm
     g_iterm = 0
     
 cv2.createTrackbar('P','hsv',15,255,nothing) # KP
@@ -47,6 +48,7 @@ cv2.createTrackbar('D','hsv',0,255,nothing) # KD
 cv2.createTrackbar('S','hsv',160,255,clearSetpoint) # SETPOINT
 
 g_iterm = 0
+g_previous_error = 0
 
 
 
@@ -261,7 +263,7 @@ def visualisation(img, img_can, pos_list, sat_list, xPos, yPos, width, height):
 import serial
 import threading
 import time
-ser_com = serial.Serial('COM8')  # open serial port
+ser_com = serial.Serial('COM3')  # open serial port
 print(ser_com.name)         # check which port was really used
 
 
@@ -280,17 +282,21 @@ def write_to_port(ser):
             setpoint = cv2.getTrackbarPos('S','hsv') if cv2.getTrackbarPos('S','hsv') != 0 else g_hand_distance;
             kp = float(cv2.getTrackbarPos('P', 'hsv')) / 100;
             ki = float(cv2.getTrackbarPos('I', 'hsv')) / 100
+            kd = float(cv2.getTrackbarPos('D', 'hsv')) / 100
             error = (g_ball_distance - setpoint)
+            deltaError = error - g_previous_error
 
             #print "Error: " + str(error)
 
             STABLE_AT = 168
             # DEfault value - p + i + d
-            value = STABLE_AT - int(kp * error) + int(ki * g_iterm )
+            value = STABLE_AT - int(kp * error) + int(ki * g_iterm ) + int(kd * deltaError / delay)
+            print int(ki * g_iterm )
 
-            if (value > 255):
+
+            if (value > 255): # Max fan speed
                 value = 255
-            elif  (value < STABLE_AT - 30):
+            elif  (value < STABLE_AT - 30): # minimum fan speed
                 value = STABLE_AT - 30
 
             
@@ -319,14 +325,15 @@ def write_to_port(ser):
                 print "DOEI BALL"
                 value = STABLE_AT - 5
             else:
-                g_iterm *= delay
+                #g_iterm *= delay
+                g_iterm += error * delay
             
             print "Ball hight: " + str(g_ball_distance)
-            #print "Fan speed: " + str(value)
+            print "Fan speed: " + str(value)
             ser.write(int_to_byte(value))     # Set motor speed
 
             ser.write(b'S')
-            print "Set point: " + str(setpoint) + "/n"
+            print "Set point: " + str(setpoint) + "\n"
             ser.write(int_to_byte(g_ball_distance if g_ball_distance < 256 else 255))
 
 
