@@ -68,11 +68,19 @@ WF_min_width = 5
 WF_stepsize  = 2
 WF_max_width = 80
 
-#Detection area, shown as a white square on screen. 
-WF_x1 = 0.45
-WF_x2 = 0.50
-WF_y1 = 0.05
-WF_y2 = 0.95
+
+# Box positions
+hand_x_pos = 230
+hand_y_pos = 18
+hand_width = 64
+hand_height = 324
+
+ball_x_pos = hand_x_pos + 50 + hand_width
+ball_y_pos = 18
+ball_width = 32
+ball_height = 324
+
+
 
 
 #======================================= Other Initial Values =================================================#
@@ -82,6 +90,7 @@ previoustime = 0
 
 #The ball distance
 g_ball_distance = 0
+g_hand_distance = 0
 g_running = True
 
 #==============================================================================================================#
@@ -119,15 +128,15 @@ def scaleimages(scale, img1):
 
 #==============================================================================================================#
 
-def getvalues(img, height, width):
+def getvalues(img, xPos, yPos, width = 32, height = 324):
     
-    line_x1 = int(width * WF_x1)
-    line_x2 = int(width * WF_x2)
+    line_x1 = xPos
+    line_x2 = xPos + width
     
     x_step = (line_x2-line_x1)/WF_measurements_x
     
-    line_y1 = int(height * WF_y1)
-    line_y2 = int(height * WF_y2)
+    line_y1 = yPos
+    line_y2 = yPos + height
 
     y = line_y1
     pos_list = []
@@ -195,11 +204,11 @@ def calculate_wasfront(sat_list):
 #==============================================================================================================#
 
 
-def visualisation(img, img_can, pos_list, sat_list, height, width):
+def visualisation(img, img_can, pos_list, sat_list, xPos, yPos, width, height):
     
-    line_x = int(width * 0.55)
-    line_y1 = int(height * 0.05)
-    line_y2 = int(height * 0.95)
+    line_x = xPos
+    line_y1 = yPos
+    line_y2 = yPos + width
 
     lastval = 50
 
@@ -231,9 +240,14 @@ def visualisation(img, img_can, pos_list, sat_list, height, width):
     cv2.line(img_can,(line_x-50,int(height*0.95)),(line_x, int(height*0.95)),(160,160,160),2)
     cv2.putText( img_can, str(mm_bot), (line_x-75,int(height*0.95)), 5, 0.5, (160,160,160) )
 
+    '''
     for x in range (len(pos_list)):     
         cv2.putText( img, str(sat_list[x]), (line_x+10, pos_list[x]), 5, 0.5, (255,255,255) )
         cv2.line(img,(line_x+50,pos_list[x]),(line_x+50+sat_list[x],pos_list[x]),(0,255,0),1)
+    '''
+    if (mm_washfront < 0):
+        mm_washfront = 0
+    
     return img, img_can, mm_washfront
         
 
@@ -247,7 +261,7 @@ def visualisation(img, img_can, pos_list, sat_list, height, width):
 import serial
 import threading
 import time
-ser_com = serial.Serial('COM3')  # open serial port
+ser_com = serial.Serial('COM8')  # open serial port
 print(ser_com.name)         # check which port was really used
 
 
@@ -263,12 +277,12 @@ def write_to_port(ser):
         if time.time() - old_time > delay:  # Every 10 sec
             old_time = time.time()
             ser.write(b'M')     # Set edit mode to Motor on arduino
-            setpoint = cv2.getTrackbarPos('S','hsv');
+            setpoint = cv2.getTrackbarPos('S','hsv') if cv2.getTrackbarPos('S','hsv') != 0 else g_hand_distance;
             kp = float(cv2.getTrackbarPos('P', 'hsv')) / 100;
             ki = float(cv2.getTrackbarPos('I', 'hsv')) / 100
             error = (g_ball_distance - setpoint)
 
-            print "Error: " + str(error)
+            #print "Error: " + str(error)
 
             STABLE_AT = 168
             # DEfault value - p + i + d
@@ -308,7 +322,7 @@ def write_to_port(ser):
                 g_iterm *= delay
             
             print "Ball hight: " + str(g_ball_distance)
-            print "Fan speed: " + str(value)
+            #print "Fan speed: " + str(value)
             ser.write(int_to_byte(value))     # Set motor speed
 
             ser.write(b'S')
@@ -346,8 +360,12 @@ while(True):   #Main program
 
     height, width = getresolution(img_canvas)                               #Function to get the resolution of the image
 
-    img_vis, pos_list, sat_list = getvalues(img_hsv, height, width)         #Function to detect and calculate values
-    img_vis, img_canvas, g_ball_distance = visualisation(img_hsv, img_canvas, pos_list, sat_list, height, width)     #Function to print visualisize values on image
+
+
+    img_vis, hand_pos_list, hand_sat_list = getvalues(img_hsv, hand_x_pos, hand_y_pos, hand_width, hand_height)           #Function to detect and calculate values
+    img_vis, ball_pos_list, ball_sat_list = getvalues(img_hsv, ball_x_pos, ball_y_pos, ball_width, ball_height)           #Function to detect and calculate values
+    img_vis, img_canvas, g_hand_distance = visualisation(img_hsv, img_canvas, hand_pos_list, hand_sat_list, hand_x_pos, hand_y_pos, hand_width, hand_height)     #Function to print visualisize values on image
+    img_vis, img_canvas, g_ball_distance = visualisation(img_hsv, img_canvas, ball_pos_list, ball_sat_list, ball_x_pos, ball_y_pos, ball_width, ball_height)     #Function to print visualisize values on image
 
     fps, currenttime = getfps(previoustime)
     previoustime = currenttime
