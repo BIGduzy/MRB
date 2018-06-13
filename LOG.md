@@ -42,15 +42,15 @@ Project is gonna fail.
 
 NOTE: We need to contact Marius for new fans.
 
-## 10-06-2018
-We found a new ping pong ball, this one is larger and orange. Because of this we have better lift and colored paper behind tube is no longer needed.
-
 ## 12-06-2018
-We have finally managed to have the vision part locate the ball.
+We found a new ping pong ball, this one is larger and orange. Because of this we have better lift and colored paper behind tube is no longer needed.
 This has been more work than it should have been, seeings as this project should have been about PID.
+
+(Jasper zet hier de nieuwe fix voor fans neer.)
 
 ## 13-06-2018
 We now have a PID controller as well.
 This hasn't been more than an hour of work.
 Why are we doing a project where we need to spend 40 hours on some vision, while the core of the assignment is the PID controller.
 PID parameters were just a matter of trial and error.
+Its now possible to set the setpoint using your hand (by computer vision).
