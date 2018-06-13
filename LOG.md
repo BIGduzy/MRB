@@ -45,8 +45,7 @@ NOTE: We need to contact Marius for new fans.
 ## 12-06-2018
 We found a new ping pong ball, this one is larger and orange. Because of this we have better lift and colored paper behind tube is no longer needed.
 This has been more work than it should have been, seeings as this project should have been about PID.
-
-(Jasper zet hier de nieuwe fix voor fans neer.)
+While trying to fix our malfunctioning circuit, Wouter van Ooijen who was in the TI lab at the time gave us the suggestion to use the TIP122 transistor which worked perfectly and also made it a bit more simpler.
 
 ## 13-06-2018
 We now have a PID controller as well.

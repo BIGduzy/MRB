@@ -2,8 +2,11 @@
 ---
 
 
-## Aansturing van fan en speaker
-(Jasper gaat dit stuk doen)
+## Aansturing van fans en speaker
+Voor het aansturen van de fans is een externe voeding gebruikt van 13.5 volt die maximaal 60 watt kan leveren. Dit is dus meer dan genoeg voor de twee fans.  
+De stroom van de fans gaat via de transistor TIP122 naar de grond. Deze transistor wordt vanaf de Arduino aangestuurd doormiddel van PWM.  
+De speaker gaat via een digitale pin die snel uit een aan gaat naar de grond. Hoe sneller het uit en aan gaan van deze pin, hoe hoger de toon van de speaker.
+![Electric circuit](circuit.PNG)
 
 ## Detecteren van bal en hand
 Omdat voor het detecteren van de bal computer vision gebruikt moest worden, is er gekozen om het verzetten van de setpoint ook gebruik te laten maken van computer.
