@@ -4,8 +4,8 @@ bool firstByte = true;
 uint8_t incomingByte = 0;
 
 void play(const uint8_t speaker, const uint8_t tone) {
-    auto end = millis();
-    auto half_period = 1000000 / ( 2 * tone );    
+    auto end = millis() + 10;
+    auto half_period = 100000 / ( 3 * tone );    
     while(end > millis()) {
         digitalWrite(speaker, HIGH);
         delayMicroseconds(half_period);
